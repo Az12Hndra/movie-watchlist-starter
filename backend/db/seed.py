@@ -2,20 +2,20 @@ import json
 import sqlite3
 from pathlib import Path
 
-root = Path(__file__).resolve().parents[2]
-db_path = root / "backend" / "filmlog.db"
-schema_path = Path(__file__).with_name("schema.sql")
-movies_path = root / "data" / "movies.json"
+ROOT = Path(__file__).resolve().parents[2]
+DB_PATH = ROOT / "backend" / "filmlog.db"
+SCHEMA_PATH = Path(__file__).with_name("schema.sql")
+MOVIES_PATH = ROOT / "data" / "movies.json"
 
 def main():
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(DB_PATH)
     conn.execute("PRAGMA foreign_keys = ON")
 
     # Create the tables
-    conn.executescript(schema_path.read_text(encoding="utf-8"))
+    conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
 
     # Read the movie data
-    movies  = json.loads(movies_path.read_text(encoding="utf-8"))
+    movies  = json.loads(MOVIES_PATH.read_text(encoding="utf-8"))
 
     # Insert each movie
     for m in movies:
