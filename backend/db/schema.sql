@@ -1,7 +1,7 @@
 -- users table, consist of id, username, email, password, 
 
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, -- uses autoincrement to add more users automatically
+    id INTEGER PRIMARY KEY AUTOINCREMENT, -- uses autoincrement to generate users id automatically
     username TEXT NOT NULL UNIQUE,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS watchlists (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, movie_id)
+    PRIMARY KEY (user_id, movie_id) -- composite primary key
 );
 
 CREATE TABLE IF NOT EXISTS reviews (

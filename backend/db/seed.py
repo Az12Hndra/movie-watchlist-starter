@@ -9,6 +9,10 @@ MOVIES_PATH = ROOT / "data" / "movies.json"
 
 def main():
     conn = sqlite3.connect(DB_PATH)
+
+    # Foreign key constraints in SQLite are disabled by default.
+    # This design choice is made for backwards compatibility with older databases
+    # that were created before foreign key support was introduced.
     conn.execute("PRAGMA foreign_keys = ON")
 
     # Create the tables
