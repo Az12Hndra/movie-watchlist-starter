@@ -39,7 +39,7 @@ def list_movies(
 
     if genre:
         # If a genre filter was sent, adds a SQL check to match that genre
-        conditions.append("genres LIKE")
+        conditions.append("genres LIKE ?")
         params.append(f'%"{genre}"%')
     if search:
         # If a search keyword was sent, adds a check for matching titles or directors
@@ -48,7 +48,7 @@ def list_movies(
 
     sql = "SELECT * FROM movies"
     if conditions:
-        sql += "WHERE" + "AND".join(conditions)
+        sql += " WHERE " + " AND ".join(conditions)
     sql += " ORDER BY RANDOM()" if shuffle else " ORDER BY id"
 
     rows = db.execute(sql, params).fetchall()
