@@ -3,8 +3,14 @@ import sqlite3
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.database import get_db
-from app.schemas import RegisterIn, UserOut
-from app.security import hash_password
+from app.deps import get_current_user
+from app.schemas import LoginIn, LoginOut, RegisterIn, UserOut
+from app.security import (
+    DUMMY_HASH,
+    create_access_token,
+    hash_password,
+    verify_password,
+)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -32,3 +38,35 @@ def register(data: RegisterIn, db: sqlite3.Connection = Depends(get_db)):
     return {"id": cursor.lastrowid, "username": data.username, "email": data.email}
 
 # Note: The error message doesn't say which of email or username was taken, so it reveals a little less to attackers
+
+@router.post("/login", response_model=LoginOut)
+def login(data: LoginIn, db: sqlite3.Connection = Depends(get_db)):
+    user = db.execute(
+        "SELECT id, username, email, password_hash FROM users WHERE email = ?",
+        (data.email,),
+    ).fetchone()
+
+    # So it always run one password check, even for unknown emails
+    password_hash = user["password_hash"] if user else DUMMY_HASH
+    password_ok = verify_password(data.password, password_hash)
+
+    if user is None or not password_ok:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token = create_access_token(user["id"])
+    return {
+        "token": token,
+        "user": {"id": user["id"], "username": user["username"], "email": user["email"]},
+    }
+
+@router.get("/me", response_model=UserOut)
+def me(current_user: sqlite3.Row = Depends(get_current_user)):
+    return {
+        "id": current_user["id"],
+        "username": current_user["username"],
+        "email": current_user["email"],
+    }

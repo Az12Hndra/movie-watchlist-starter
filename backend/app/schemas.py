@@ -33,3 +33,18 @@ class UserOut(BaseModel):
     id: int
     username: str
     email: str
+
+class LoginIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def lowercase_email(cls, value: str) -> str:
+        return value.lower()
+
+class LoginOut(BaseModel):
+    token: str
+    user: UserOut
