@@ -54,6 +54,7 @@ def list_movies(
     rows = db.execute(sql, params).fetchall()
     return [row_to_movie(r) for r in rows]
 
+# It should be start from this when frontend asks for /api/movies/id
 @router.get("/{movie_id}", response_model=MovieOut)
 def get_movie(movie_id: int, db: sqlite3.Connection = Depends(get_db)):
     row = db.execute("SELECT * FROM movies WHERE id = ?", (movie_id,)).fetchone()
