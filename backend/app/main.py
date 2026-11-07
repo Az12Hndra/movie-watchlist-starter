@@ -1,9 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-
-from app.routers import movies
-
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 app = FastAPI(title="FilmLog API")
+
+from app.routers import auth, movies
 
 # This is how frontend talk to the server (CORS)
 # For security note, I list the exact frontend address instead of "*" which means anyone.
@@ -14,8 +16,29 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
+@app.exception_handler(StarletteHTTPException)
+async def http_error_handler(request: Request, exc: StarletteHTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": exc.detail},
+        headers=exc.headers,
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, exc: RequestValidationError):
+    first = exc.errors()[0]
+    field = ".".join(str(part) for part in first["loc"] if part!= "body")
+    return JSONResponse(
+        status_code=400,
+        content={"error": f"Invalid input ({field}): {first['msg']}"},
+    )
+
 app.include_router(movies.router)
+app.include_router(auth.router)
 
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+# Note: The validation handler uses only the field name and the short message.
+# FastAPI's raw error list also contains the input value, which for a failed registration could be the user's password.
