@@ -1,27 +1,12 @@
-import json
 import sqlite3
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.serializers import row_to_movie
 from app.database import get_db
 from app.schemas import MovieOut
 
 router = APIRouter(prefix="/api/movies", tags=["movies"])
-
-def row_to_movie(row: sqlite3.Row) -> dict:
-    """Turn a database row into the shape the frontend expects."""
-    return {
-        "id": row["id"],
-        "title": row["title"],
-        "year": row["year"],
-        "director": row["director"],
-        "genres": json.loads(row["genres"]),
-        "rating": row["rating"],
-        "duration": f'{row["duration_minutes"]} min',
-        "synopsis": row["synopsis"],
-        "poster_url": row["poster_url"],
-        "cast": json.loads(row["cast_members"]),
-    }
 
 # Accepts optional URL parameters: ?genre=..., ?search=..., and ?shuffle=true
 # db = Depends(get_db) asks database.py to open a database connection for this request

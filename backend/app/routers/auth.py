@@ -28,7 +28,7 @@ def register(data: RegisterIn, db: sqlite3.Connection = Depends(get_db)):
     try:
         cursor = db.execute(
             "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
-            (data.username, data.email, data.password)
+            (data.username, data.email, password_hash)
         )
         db.commit()
     except sqlite3.IntegrityError:

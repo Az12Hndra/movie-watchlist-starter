@@ -27,7 +27,7 @@ def get_current_user(
         raise _unauthorized("Invalid or expired token")
 
     user = db.execute(
-        "SELECT id, username, email FROM users WHERE id = ?", (user_id)
+        "SELECT id, username, email FROM users WHERE id = ?", (user_id,)
     ).fetchone()
     if user is None:
         raise _unauthorized("Invalid or expired token")

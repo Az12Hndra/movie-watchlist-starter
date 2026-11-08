@@ -3,9 +3,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
 app = FastAPI(title="FilmLog API")
 
-from app.routers import auth, movies
+from app.routers import auth, movies, watched, watchlist
 
 # This is how frontend talk to the server (CORS)
 # For security note, I list the exact frontend address instead of "*" which means anyone.
@@ -35,6 +36,8 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
 
 app.include_router(movies.router)
 app.include_router(auth.router)
+app.include_router(watchlist.router)
+app.include_router(watched.router)
 
 @app.get("/api/health")
 def health():

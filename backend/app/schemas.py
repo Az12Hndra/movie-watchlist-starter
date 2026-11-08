@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 class MovieOut(BaseModel):
     id: int
@@ -48,3 +48,48 @@ class LoginIn(BaseModel):
 class LoginOut(BaseModel):
     token: str
     user: UserOut
+
+class WatchlistAddIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    movie_id: int | None = Field(default=None, ge=1)
+    movieId: int | None = Field(default=None, ge=1)
+
+    @model_validator(mode="after")
+    def resolve_movie_id(self):
+        ids = {v for v in (self.movie_id, self.movieId) if v is not None}
+        if len(ids) != 1:
+            raise ValueError("movie_id is required (and movieId must match it if both are sent)")
+        self.movie_id = ids.pop()
+        return self
+
+class WatchedIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    movie_id: int | None = Field(default=None, ge=1)
+    movieId: int | None = Field(default=None, ge=1)
+    rating: int = Field(ge=1, le=5)
+    review: str | None = Field(default=None, max_length=2000)
+    opinion: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def normalize(self):
+        ids = {v for v in (self.movie_id, self.movieId) if v is not None}
+        if len(ids) != 1:
+            raise ValueError("movie_id is required (and movieId must match it if both are sent)")
+        self.movie_id = ids.pop()
+        self.review = (self.review or self.option) or None
+        return self
+
+class WatchlistItemOut(BaseModel):
+    movie_id: int
+    created_at: str
+    movie: MovieOut
+
+class WatchedItemOut(BaseModel):
+    id: int
+    movie_id: int
+    rating: int
+    review: str | None
+    created_at: str
+    movie: MovieOut
