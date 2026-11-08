@@ -2,11 +2,15 @@ import sqlite3
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.serializers import row_to_movie
 from app.database import get_db
-from app.schemas import MovieOut
+from app.ratelimit import RateLimiter
+from app.schemas import MovieOut, RecommendIn, RecommendOut
+from app.serializers import row_to_movie
+from app.services import gemini
 
 router = APIRouter(prefix="/api/movies", tags=["movies"])
+
+recommend_limiter = RateLimiter(max_calls=10, per_seconds=60)
 
 # Accepts optional URL parameters: ?genre=..., ?search=..., and ?shuffle=true
 # db = Depends(get_db) asks database.py to open a database connection for this request
@@ -38,6 +42,25 @@ def list_movies(
 
     rows = db.execute(sql, params).fetchall()
     return [row_to_movie(r) for r in rows]
+
+@router.post(
+        "/recommend",
+        response_model=RecommendOut,
+        dependencies=[Depends(recommend_limiter)],
+)
+def recommend_movie(data: RecommendIn, db: sqlite3.Connection = Depends(get_db)):
+    catalog = gemini.load_catalog(db)
+
+    try:
+        pick = gemini.recommend(data.prompt, catalog)
+    except gemini.RecommendationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+
+    row = db.execute("SELECT * FROM movies WHERE id = ?", (pick.movie_id,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=502, detail="The AI picked a movie that does not exist.")
+
+    return {"movie_id": pick.movie_id, "reasoning": pick.reasoning, "movie": row_to_movie(row)}
 
 # It should be start from this when frontend asks for /api/movies/id
 @router.get("/{movie_id}", response_model=MovieOut)

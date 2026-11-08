@@ -93,3 +93,27 @@ class WatchedItemOut(BaseModel):
     review: str | None
     created_at: str
     movie: MovieOut
+
+class RecommendIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    prompt: str | None = Field(default=None, max_length=500)
+    query: str | None = Field(default=None, max_length=500)
+    description: str | None = Field(default=None, max_length=500)
+
+    @model_validator(mode="after")
+    def resolve_prompt(self):
+        text = self.prompt or self.query or self.description
+        if not text or len(text) < 3:
+            raise ValueError("prompt is required (3 to 500 characters)")
+        self.prompt = text
+        return self
+
+class GeminiPick(BaseModel):
+    movie_id: int
+    reasoning: str
+
+class RecommendOut(BaseModel):
+    movie_id: int
+    reasoning: str
+    movie: MovieOut
